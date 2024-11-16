@@ -1,5 +1,6 @@
 
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 import 'package:taskmanager/data/model/network_response.dart';
 import 'package:taskmanager/data/model/task_list_model.dart';
 import 'package:taskmanager/data/model/task_model.dart';
@@ -7,6 +8,7 @@ import 'package:taskmanager/data/model/task_status_count_model.dart';
 import 'package:taskmanager/data/model/task_status_model.dart';
 import 'package:taskmanager/data/service/network_caller.dart';
 import 'package:taskmanager/data/utils/urls.dart';
+import 'package:taskmanager/ui/controller/new_task_list_controller.dart';
 import 'package:taskmanager/ui/screens/add_new_task_screen.dart';
 import 'package:taskmanager/ui/utilits/app_colors.dart';
 import 'package:taskmanager/ui/widgets/snacbar_massage.dart';
@@ -24,6 +26,7 @@ class NewTaskScreen extends StatefulWidget {
 class _NewTaskScreenState extends State<NewTaskScreen> {
   bool _getNewTaskListInProgress=false;
   bool _getTaskStatusountnProgress=false;
+  final NewTaskListController _newTaskListController=Get.find<NewTaskListController>();
 
   List<TaskModel> _newTaskList=[];
   List<TaskStatusModel> _taskStatusCountList = [];
@@ -50,22 +53,26 @@ class _NewTaskScreenState extends State<NewTaskScreen> {
             _buildSummarySection(),
              Expanded(
               child:
-              Visibility(
-                visible: !_getNewTaskListInProgress,
-                replacement: Text('Wait'),
-                child: ListView.separated(
-                  itemCount: _newTaskList.length,
-                  itemBuilder: (context, index) {
-                    return TaskCard(taskModel: _newTaskList[index],
-                      onRefreshList: (){
-                        _getNewTaskList();
+              GetBuilder<NewTaskListController>(
+                builder: (newTaskController) {
+                  return Visibility(
+                    visible: !newTaskController.inprogress,
+                    replacement: Text('Wait'),
+                    child: ListView.separated(
+                      itemCount: newTaskController.taskList.length,
+                      itemBuilder: (context, index) {
+                        return TaskCard(taskModel: newTaskController.taskList[index],
+                          onRefreshList: (){
+                            _getNewTaskList();
+                          },
+                        );
                       },
-                    );
-                  },
-                  separatorBuilder: (context,index){
-                    return const SizedBox(height: 8);
-                },
-                ),
+                      separatorBuilder: (context,index){
+                        return const SizedBox(height: 8);
+                    },
+                    ),
+                  );
+                }
               ),
             ),
           ],
@@ -111,18 +118,10 @@ class _NewTaskScreenState extends State<NewTaskScreen> {
   }
 
   Future<void> _getNewTaskList() async {
-        _getNewTaskListInProgress=true;
-        final NetworkResponse response =
-        await NetworkCaller.getRequest(Url: urls.newTaskList);
-        if(response.isSuccess){
-          final TaskListModel taskListModel =
-          TaskListModel.fromJson(response.responseData);
-          _newTaskList=taskListModel.taskList ?? [];
-    }else{
-          showSnacBarMassage(context, response.erroMessage,true);
+     final bool result= await _newTaskListController.getNewTaskList();
+        if(result==false){
+          showSnacBarMassage(context, _newTaskListController.errorMessage!,true);
         }
-        _getNewTaskListInProgress=false;
-        setState(() { });
   }
   Future<void> _getStatusountLst() async {
     _taskStatusCountList.clear();

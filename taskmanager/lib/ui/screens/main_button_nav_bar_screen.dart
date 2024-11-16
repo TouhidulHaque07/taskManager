@@ -9,6 +9,8 @@ import 'package:taskmanager/ui/widgets/tm_app_bar.dart';
 class MainButtonNavBarScreen extends StatefulWidget {
   const MainButtonNavBarScreen({super.key});
 
+  static const String name='/home';
+
   @override
   State<MainButtonNavBarScreen> createState() => _MainButtonNavBarScreenState();
 }
